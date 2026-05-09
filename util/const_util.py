@@ -1,8 +1,11 @@
 """Constants for use in review analysis"""
 
-DATA_FILE_PATH = "data/murrays_disposal_google_reviews_2026_04_24.csv"
+DATA_FILE_PATH = "data/reviews_2026_04_24.csv"
 
-# Feed in guided BERTopic seed topics
+LLAMA_PATH = "zephyr-7b-alpha.Q4_K_M.gguf"
+EMBEDDING_PATH = "sentence-transformers/all-MiniLM-L6-v2"
+
+# Guided BERTopic varibles
 review_topics = [
     # Topic: Service Reliability/Consistency
     ["missed", "time", "times", "extra", "pickup", "pickups"],
@@ -21,14 +24,10 @@ waste_stop_words = [
 
     # Waste general words
     "trash", "driver", "drivers", "truck", "trucks", "trash", "garbage",
-    "recycling", "waste", "disposal",
-
-    # Employee/customer names
-    "rachel", "shari", "jon", "danielle", "daniella", "schleif", "steph", "donna", 
-    "mackenzie", "cassie", "lambert", "denise", "bobbiejo",
+    "recycling", "waste", "disposal", "service",
 
     # Customer service general words
-    "help", "helpful", "helped", "thank", "thanks", "customer", "issue", 
+    "help", "helpful", "helped", "thank", "thanks", "customer", "issue",
     "representative", "employee", "employees",
 
     # Time
@@ -36,13 +35,12 @@ waste_stop_words = [
     "still", "today", "extra",
 
     # Communication
-    "called", "get", "work", "job", "would", "told", "said", "speaking", "talked", 
-    "back", "phone", "issue", "issues", "talking", "question", "questions",
+    "called", "work", "job", "told", "said", "speaking", "talked",
+    "phone", "issue", "issues", "talking", "question", "questions",
 
-    # Pos Sentiment Noise
-    "great", "good", "best", "beyond", "truly", "pleasure", "highly", "recommend", 
-    "experience", "amazing", "excellent", "reliable", "friendly", "appreciate", 
-    "thanks", "polite", "really", "pleasant", "courteous"
+    # Positive Sentiment Noise
+    "great", "good", "best", "beyond", "truly", "pleasure", "highly", "recommend",
+    "experience", "amazing", "excellent", "appreciate", "thanks", "polite", "really", "pleasant", "courteous"
 ]
 
 # topic_labels = {
@@ -52,3 +50,13 @@ waste_stop_words = [
 #     2: "Staff Appreciation",
 #     3: "Brand/Customer Loyalty",
 # }
+
+# Name Entity Recognition (NER) variables:
+presidio_config = [{"lang_code": "en", "model_name": "en_core_web_lg"}]
+
+entity_mapping = dict(
+    PER="PERSON",
+    LOC="LOCATION",
+    GPE="LOCATION",
+    ORG="ORGANIZATION"
+)

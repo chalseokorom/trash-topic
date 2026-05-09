@@ -6,6 +6,19 @@ import spacy
 import util.const_util as const_util
 import util.model_util as model_util
 
+# Modules to anonymize reviews
+from presidio_analyzer.nlp_engine import SpacyNlpEngine, NerModelConfiguration
+from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+
+
+ner_config = NerModelConfiguration(default_score=0.6,
+                                   model_to_presidio_entity_mapping=const_util.entity_mapping)
+
+analyzer = AnalyzerEngine(nlp_engine=SpacyNlpEngine(
+    models=const_util.presidio_config, ner_model_configuration=ner_config))
+anonymizer = AnonymizerEngine()
+
 
 def get_reviews() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Read reviews from file, clean data types and split them based on text."""
@@ -20,7 +33,7 @@ def get_reviews() -> tuple[pd.DataFrame, pd.DataFrame]:
     # Split data into those with and without text reviews
     mask = reviews.text.isna()
 
-    # Remove columns no longer relevant for stars-only reviews
+    # Remove columns no longer relevant for star-only reviews
     text_based_columns = [
         "text", "responseFromOwnerText", "responseFromOwnerDate"]
 
@@ -42,7 +55,8 @@ def get_lowest_tfidf_terms(docs: pd.Series, n_terms: int = 20) -> pd.Series:
 
 
 def get_spacy_documents(docs: pd.Series) -> list:
-    model = spacy.load("en_core_web_sm")
+    """Retrieve text as spacy spans"""
+    model = spacy.load("en_core_web_lg")
     return list(model.pipe(docs))
 
 
@@ -54,6 +68,27 @@ def add_text_features(df: pd.DataFrame) -> pd.DataFrame:
     df['TextDensity'] = df['text'].apply(
         lambda text: len(text) / len(text.split()))
 
+    df['text'] = df['text'].apply(anonymize_documents)
+
     df["Document"] = get_spacy_documents(df.text)
 
     return df
+
+
+def anonymize_documents(doc: str) -> str:
+    """Removes PII from reviews: names, places, and phone numbers"""
+    results = analyzer.analyze(text=doc, language='en')
+
+    return anonymizer.anonymize(
+        text=doc,
+        analyzer_results=results,
+        # operators=const_util.operators,
+    ).text
+
+
+def view_review_topics(topics: pd.DataFrame) -> None:
+    """Print the topics in each class"""
+    print("Topics (by Class): ")
+    for i in topics.index:
+        t = topics.iloc[i]
+        print(t.Topic, ": ", t.Words)

@@ -1,6 +1,8 @@
 """Functions to customize models for BERTopic"""
 from bertopic.vectorizers import ClassTfidfTransformer
 from bertopic import BERTopic
+from bertopic.representation import LlamaCPP
+from llama_cpp import Llama
 
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from nltk.corpus import stopwords
@@ -35,7 +37,7 @@ def get_tfidf() -> TfidfVectorizer:
 def get_vectorizer() -> CountVectorizer:
     """Utilize CountVectorizer to create human-readble labels"""
     stop_words = list(set(stopwords.words('english')))
-    stop_words.extend(const_util.waste_stop_words)
+    # stop_words.extend(const_util.waste_stop_words)
     return CountVectorizer(stop_words=stop_words, ngram_range=(1, 3), min_df=3)
 
 
@@ -43,10 +45,15 @@ def get_ctfidf() -> ClassTfidfTransformer:
     """Utilize ClassTfidfTransformer to reduce the impact of words that appear in too many topics"""
     return ClassTfidfTransformer(reduce_frequent_words=True)
 
+def get_llama_rep() -> LlamaCPP:
+    """Utilize generative AI (LLama) to generate human-readable labels"""
+    llm = Llama(model_path=const_util.LLAMA_PATH, n_ctx=2048)
+    return LlamaCPP(llm)
 
 def get_bertopic() -> BERTopic:
     """Utilize BERTopic to create interpretable and semantically meaningful topics"""
     return BERTopic(
+        representation_model=get_llama_rep(),
         umap_model=get_umap(),
         hdbscan_model=get_hdbscan(),
         vectorizer_model=get_vectorizer(),
@@ -54,3 +61,9 @@ def get_bertopic() -> BERTopic:
         seed_topic_list=const_util.review_topics,
         nr_topics='auto'
     )
+
+def export_model(topic_model: BERTopic) -> None:
+    """Export the topic model to the /model folder"""
+    embedding_model = const_util.EMBEDDING_PATH
+    topic_model.save("model/", serialization="safetensors",
+                     save_ctfidf=True, save_embedding_model=embedding_model)
