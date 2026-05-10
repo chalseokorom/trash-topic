@@ -1,2 +1,3 @@
 __pycache__
-data
+model/llama-cpp
+data/reviews_*

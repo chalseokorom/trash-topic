@@ -1,6 +1,6 @@
-"""Functions to customize models for BERTopic"""
-from bertopic.vectorizers import ClassTfidfTransformer
+"""Functions for customizing BERTopic model"""
 from bertopic import BERTopic
+from bertopic.vectorizers import ClassTfidfTransformer
 from bertopic.representation import LlamaCPP
 from llama_cpp import Llama
 
@@ -12,6 +12,19 @@ from umap import UMAP
 
 # Custom module
 import util.const_util as const_util
+
+
+def get_llama_rep() -> LlamaCPP:
+    """Utilize generative AI (LLama) to generate human-readable labels"""
+    llm = Llama.from_pretrained(
+        repo_id=const_util.LLAMA_REPO_ID,
+        filename=const_util.LLAMA_FILE_PATH,
+        pipeline_params={"max_new_tokens": 50, "temperature": 0.1},
+        prompt=const_util.LLAMA_PROMPT,
+        doc_length=100,
+        n_ctx=8192,
+        nr_docs=3)
+    return LlamaCPP(llm)
 
 
 def get_hdbscan() -> HDBSCAN:
@@ -37,7 +50,7 @@ def get_tfidf() -> TfidfVectorizer:
 def get_vectorizer() -> CountVectorizer:
     """Utilize CountVectorizer to create human-readble labels"""
     stop_words = list(set(stopwords.words('english')))
-    # stop_words.extend(const_util.waste_stop_words)
+    stop_words.extend(const_util.waste_stop_words)
     return CountVectorizer(stop_words=stop_words, ngram_range=(1, 3), min_df=3)
 
 
@@ -45,10 +58,6 @@ def get_ctfidf() -> ClassTfidfTransformer:
     """Utilize ClassTfidfTransformer to reduce the impact of words that appear in too many topics"""
     return ClassTfidfTransformer(reduce_frequent_words=True)
 
-def get_llama_rep() -> LlamaCPP:
-    """Utilize generative AI (LLama) to generate human-readable labels"""
-    llm = Llama(model_path=const_util.LLAMA_PATH, n_ctx=2048)
-    return LlamaCPP(llm)
 
 def get_bertopic() -> BERTopic:
     """Utilize BERTopic to create interpretable and semantically meaningful topics"""
@@ -59,8 +68,12 @@ def get_bertopic() -> BERTopic:
         vectorizer_model=get_vectorizer(),
         ctfidf_model=get_ctfidf(),
         seed_topic_list=const_util.review_topics,
-        nr_topics='auto'
+        calculate_probabilities=False,
+        top_n_words=10,
+        nr_topics=20,
+        verbose=True,
     )
+
 
 def export_model(topic_model: BERTopic) -> None:
     """Export the topic model to the /model folder"""
