@@ -1,40 +1,42 @@
 """Create data visualzations based on review data and BERTopic model output"""
-from pathlib import Path
-
 import pandas as pd
 import numpy as np
+import os
 
 import matplotlib.pyplot as plt
 
+PIE_PLOT_FILE_PATH = "img/star_reviews_pie_plot.svg"
+HISTOGRAM_ANIMATION_FILE_PATH = "img/cumulative_reviews_histogram_animation.gif"
 
-def get_star_review_plot(reviews: pd.DataFrame) -> None:
+
+def get_star_review_pie_plot(reviews: pd.DataFrame) -> None:
     """Create pie plot of star ratings of text reviews"""
-    if Path("img/star_reviews_pie_plot.svg").exists():
+    if os.path.exists(PIE_PLOT_FILE_PATH):
         return
 
     review_star_percentages = reviews.stars.value_counts() / len(reviews)
     review_star_percentages = (
         review_star_percentages * 100).round(2).sort_index()
 
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(aspect="equal"))
+    fig, ax = plt.subplots(figsize=(7, 7), subplot_kw=dict(aspect="equal"))
 
     star_labels = [str(r[0] + 1) + ' $\U00002605$ - ' + str(r[1]) +
                    "%" for r in enumerate(review_star_percentages)]
     ax.pie(review_star_percentages, labels=star_labels,
-           wedgeprops=dict(width=0.5), startangle=-40)
+           wedgeprops=dict(width=0.5), startangle=-40, labeldistance=1.15)
 
-    ax.set_title(
-        """Are customers more likely to leave a text review 
-            when they are angry (1-star) or happy (5-star)?""")
+    title = "Are customers more likely to leave a text review when they are angry (1-$\U00002605$) or happy (5-$\U00002605$)?"
+    ax.set_title(title, pad=20)
 
-    plt.savefig("img/star_reviews_pie_plot.svg")
+    plt.savefig(PIE_PLOT_FILE_PATH, bbox_inches='tight')
     plt.close()
+
     fig.clear()
 
 
 def get_cumulative_review_plot(text_reviews: pd.DataFrame, star_reviews: pd.DataFrame) -> None:
     """Create a animated histogram showing star ratings from all reviews over time"""
-    if Path("img/cumulative_reviews_animation.gif").exists():
+    if os.path.exists(HISTOGRAM_ANIMATION_FILE_PATH):
         return
 
     from matplotlib.animation import FuncAnimation, PillowWriter
@@ -83,7 +85,7 @@ def get_cumulative_review_plot(text_reviews: pd.DataFrame, star_reviews: pd.Data
         ax.grid(axis='y', linestyle='--', alpha=0.6)
 
     ani = FuncAnimation(fig, add_animation, frames=frames, interval=200)
-    ani.save('img/cumulative_reviews_animation.gif',
+    ani.save(HISTOGRAM_ANIMATION_FILE_PATH,
              writer=PillowWriter(fps=5))
 
     plt.close(fig)
